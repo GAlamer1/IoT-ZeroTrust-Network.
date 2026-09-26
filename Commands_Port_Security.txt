@@ -1,0 +1,128 @@
+====================================================
+IoT Zero Trust Isolated Network Project
+Port Security Commands
+====================================================
+
+Idea:
+Each port allows only one device (based on MAC Address).
+If someone unplugs the cable and connects a different device,
+the port automatically shuts itself down and must be manually
+re-enabled by the administrator.
+
+Note: Do NOT apply this to the trunk port (Fa0/1) since it
+serves multiple VLANs and has a different purpose.
+
+Enter the switch in enable mode:
+
+enable
+configure terminal
+
+
+====================================================
+Apply Port Security to every device port (Fa0/2 to Fa0/9)
+====================================================
+
+interface FastEthernet0/2
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+interface FastEthernet0/3
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+interface FastEthernet0/4
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+interface FastEthernet0/5
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+interface FastEthernet0/6
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+interface FastEthernet0/7
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+interface FastEthernet0/8
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+interface FastEthernet0/9
+switchport port-security
+switchport port-security maximum 1
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+exit
+
+
+====================================================
+Save
+====================================================
+
+end
+write memory
+
+
+====================================================
+Command explanation
+====================================================
+
+switchport port-security
+  Enables port security protection on this specific port.
+
+switchport port-security maximum 1
+  Only one device (one MAC Address) is allowed on this port.
+
+switchport port-security violation shutdown
+  If another device tries to connect, shut the port down
+  completely and immediately (strictest security mode -
+  fits the "never trust" principle of Zero Trust).
+
+switchport port-security mac-address sticky
+  Let the switch automatically "learn" and save the MAC
+  Address of the first device that connects, instead of
+  typing it manually for every device.
+
+
+====================================================
+How to test it
+====================================================
+
+1. Disconnect a device's cable (e.g. Camera1) from its port
+2. Connect a different device to the same port
+3. Have the new device send any traffic (ping, DHCP request)
+4. On the switch:
+   show port-security interface FastEthernet0/3
+5. Expected result:
+   Port Status: Secure-shutdown
+   Security Violation Count: 1
+
+To re-enable the port after testing:
+interface FastEthernet0/3
+shutdown
+no shutdown
+exit
