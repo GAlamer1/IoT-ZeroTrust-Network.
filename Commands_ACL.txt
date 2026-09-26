@@ -1,0 +1,111 @@
+====================================================
+IoT Zero Trust Isolated Network Project
+ACL Commands (the core of Zero Trust)
+====================================================
+
+Important:
+Each ACL starts with a line permitting DHCP requests (UDP 67/68).
+This must always be the first line, because ACL rules are
+processed top to bottom and the router stops at the first match.
+
+Enter the router in enable mode, then:
+
+enable
+configure terminal
+
+
+====================================================
+ACL 110 - Cameras (VLAN 10)
+====================================================
+Rule: can only reach the Server, denied from everything else
+
+access-list 110 permit udp any eq 68 any eq 67
+access-list 110 permit ip 192.168.10.0 0.0.0.255 host 192.168.99.10
+access-list 110 deny ip 192.168.10.0 0.0.0.255 192.168.20.0 0.0.0.255
+access-list 110 deny ip 192.168.10.0 0.0.0.255 192.168.30.0 0.0.0.255
+access-list 110 deny ip 192.168.10.0 0.0.0.255 192.168.40.0 0.0.0.255
+
+
+====================================================
+ACL 120 - Sensors (VLAN 20)
+====================================================
+Rule: same as Cameras - Server access only
+
+access-list 120 permit udp any eq 68 any eq 67
+access-list 120 permit ip 192.168.20.0 0.0.0.255 host 192.168.99.10
+access-list 120 deny ip 192.168.20.0 0.0.0.255 192.168.10.0 0.0.0.255
+access-list 120 deny ip 192.168.20.0 0.0.0.255 192.168.30.0 0.0.0.255
+access-list 120 deny ip 192.168.20.0 0.0.0.255 192.168.40.0 0.0.0.255
+
+
+====================================================
+ACL 130 - Admin (VLAN 30)
+====================================================
+Rule: can reach Cameras + Sensors + Server, denied from Users
+
+access-list 130 permit udp any eq 68 any eq 67
+access-list 130 permit ip 192.168.30.0 0.0.0.255 192.168.10.0 0.0.0.255
+access-list 130 permit ip 192.168.30.0 0.0.0.255 192.168.20.0 0.0.0.255
+access-list 130 permit ip 192.168.30.0 0.0.0.255 host 192.168.99.10
+access-list 130 deny ip 192.168.30.0 0.0.0.255 192.168.40.0 0.0.0.255
+access-list 130 permit ip any any
+
+
+====================================================
+ACL 140 - Users (VLAN 40)
+====================================================
+Rule: denied from all local VLANs, allowed to Server and internet
+
+access-list 140 permit udp any eq 68 any eq 67
+access-list 140 deny ip 192.168.40.0 0.0.0.255 192.168.10.0 0.0.0.255
+access-list 140 deny ip 192.168.40.0 0.0.0.255 192.168.20.0 0.0.0.255
+access-list 140 deny ip 192.168.40.0 0.0.0.255 192.168.30.0 0.0.0.255
+access-list 140 permit ip any any
+
+
+====================================================
+Apply each ACL to its Sub-interface
+====================================================
+
+interface GigabitEthernet0/0.10
+ip access-group 110 in
+exit
+
+interface GigabitEthernet0/0.20
+ip access-group 120 in
+exit
+
+interface GigabitEthernet0/0.30
+ip access-group 130 in
+exit
+
+interface GigabitEthernet0/0.40
+ip access-group 140 in
+exit
+
+
+====================================================
+Save
+====================================================
+
+end
+write memory
+
+
+====================================================
+Verification
+====================================================
+
+show access-lists
+
+Ping tests to run between devices:
+
+Camera1  -> Server0     -> must succeed
+Camera1  -> Admin-PC    -> must fail (Request timed out)
+Camera1  -> User-PC1    -> must fail
+Admin-PC -> Camera1     -> must succeed
+Admin-PC -> User-PC1    -> must fail
+User-PC1 -> Camera1     -> must fail
+User-PC1 -> Server0     -> must succeed
+
+If all results match, Zero Trust is working correctly 100%.
